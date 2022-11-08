@@ -31,9 +31,6 @@ app.use("/api/user", userRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/message", messageRoutes);
 
-app.use(notFound);
-app.use(errorHandler);
-
 const io = new Server(httpServer, {
   cors: {
     origin: "*",
@@ -73,6 +70,9 @@ io.on("connection", (socket) => {
     socket.leave(userData._id);
   });
 });
+
+app.use(notFound);
+app.use(errorHandler);
 
 httpServer.listen(PORT, () => {
   console.log(`Server is running on port: ${PORT}`);
