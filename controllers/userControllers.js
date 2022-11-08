@@ -95,20 +95,20 @@ const getSearchedUser = asyncHandler(async (req, res) => {
 const registerUserWithSTTokenCreds = asyncHandler(async (req, res) => {
   const { name, email, userId } = req.body;
 
-  if (!name || !email || !userId) {
+  if (!name || !userId) {
     return res
       .status(400)
       .json({ message: "Please give name, email and userId" });
   }
 
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ userId });
 
     // check if user is not registered, then register
     if (!user) {
       const result = await User.create({
         name,
-        email,
+        email: email || `${name}@test.com`,
         password: "1234",
         userId,
       });
