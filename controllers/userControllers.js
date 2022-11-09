@@ -109,7 +109,7 @@ const registerUserWithSTTokenCreds = asyncHandler(async (req, res) => {
       const result = await User.create({
         name,
         email: email || `${name}@test.com`,
-        password: "1234",
+        password: "12345",
         userId,
       });
       return res.status(201).json({
