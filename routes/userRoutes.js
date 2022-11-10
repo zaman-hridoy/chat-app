@@ -6,6 +6,7 @@ const {
   getSearchedUser,
   registerUserWithSTTokenCreds,
   getUserById,
+  registerAllUser,
 } = require("../controllers/userControllers");
 const authMiddleware = require("../middlewares/authMiddleware");
 
@@ -17,5 +18,7 @@ router.post("/register-with-st-token", registerUserWithSTTokenCreds);
 
 router.get("/", authMiddleware, getSearchedUser);
 router.get("/:userId", getUserById);
+
+router.post("/insert-users", registerAllUser);
 
 module.exports = router;

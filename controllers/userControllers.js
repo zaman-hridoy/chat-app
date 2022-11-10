@@ -65,6 +65,7 @@ const loginUser = asyncHandler(async (req, res) => {
 // /api/user?search=zaman
 const getSearchedUser = asyncHandler(async (req, res) => {
   const keyword = req.query.search;
+  const limit = +req.query.limit || 10;
   const users = await User.find({
     $or: [
       {
@@ -80,11 +81,13 @@ const getSearchedUser = asyncHandler(async (req, res) => {
         },
       },
     ],
-  }).find({
-    _id: {
-      $ne: req.user._id,
-    },
-  });
+  })
+    .find({
+      _id: {
+        $ne: req.user._id,
+      },
+    })
+    .limit(limit);
 
   res.status(200).json({
     success: true,
@@ -147,10 +150,37 @@ const getUserById = asyncHandler(async (req, res) => {
   res.status(200).json(user);
 });
 
+function getUniqueListBy(arr, key) {
+  return [...new Map(arr.map((item) => [item[key], item])).values()];
+}
+
+const registerAllUser = asyncHandler(async (req, res) => {
+  try {
+    const userList = [...req.body];
+
+    const users = await User.find({}).select("name userId email -_id");
+
+    // "mLength": 14,
+    // "uLength": 4237
+
+    const combineUsers = [...users, ...userList];
+
+    let uniqueArr = getUniqueListBy(combineUsers, "userId");
+
+    const results = await User.insertMany(uniqueArr);
+
+    res.status(200).send(results);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = {
   registerUser,
   loginUser,
   getSearchedUser,
   registerUserWithSTTokenCreds,
   getUserById,
+  registerAllUser,
 };
