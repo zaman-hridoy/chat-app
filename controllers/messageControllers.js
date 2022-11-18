@@ -14,6 +14,7 @@ const sendMesage = asyncHandler(async (req, res) => {
     sender: req.user._id,
     content,
     chat: chatId,
+    chatId,
   };
 
   try {
@@ -40,9 +41,37 @@ const sendMesage = asyncHandler(async (req, res) => {
 
 const getAllMessages = asyncHandler(async (req, res) => {
   try {
-    const messages = await Message.find({ chat: req.params.chatId })
-      .populate("sender", "name pic email")
-      .populate("chat");
+    // const messages = await Message.find({ chat: req.params.chatId })
+    //   .populate("sender", "name pic email")
+    //   .populate("chat");
+    let today = new Date();
+
+    const messages = await Message.aggregate([
+      {
+        $match: { chatId: req.params.chatId },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "sender",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$createdAt",
+            },
+          },
+          messageByDate: {
+            $push: "$$ROOT",
+          },
+        },
+      },
+    ]);
 
     res.status(200).json(messages);
   } catch (err) {

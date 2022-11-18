@@ -1,6 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const Chat = require("../models/chatModel");
 const User = require("../models/userModel");
+const Notification = require("../models/notificationModel");
 
 const accessChat = asyncHandler(async (req, res) => {
   const { userId } = req.body;
@@ -33,12 +34,13 @@ const accessChat = asyncHandler(async (req, res) => {
         },
       ],
     })
-      .populate("users", "-password")
-      .populate("latestMessage");
+      .populate("users")
+      .populate("latestMessage")
+      .populate("creator");
 
     isChat = await User.populate(isChat, {
       path: "latestMessage.sender",
-      select: "name pic email",
+      select: "name pic email isActive role userId isActive",
     });
 
     if (isChat.length > 0) {
@@ -46,16 +48,16 @@ const accessChat = asyncHandler(async (req, res) => {
     } else {
       let chatData = {
         chatName: "sender",
+        creator: req.user._id,
         isGroupChat: false,
         users: [req.user._id, userId],
       };
 
       const createdChat = await Chat.create(chatData);
 
-      const fullChat = await Chat.find({ _id: createdChat._id }).populate(
-        "users",
-        "-password"
-      );
+      const fullChat = await Chat.find({ _id: createdChat._id })
+        .populate("users")
+        .populate("creator");
 
       res.status(200).send(fullChat[0]);
     }
@@ -77,8 +79,8 @@ const fetchChats = asyncHandler(async (req, res) => {
         },
       },
     })
-      .populate("users", "-password")
-      .populate("groupAdmin", "-password")
+      .populate("users")
+      .populate("creator")
       .populate("latestMessage")
       .sort({ updatedAt: -1 })
       .then(async (results) => {
@@ -91,6 +93,51 @@ const fetchChats = asyncHandler(async (req, res) => {
           data: results,
         });
       });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      message: err.message,
+    });
+  }
+});
+
+const addNotification = asyncHandler(async (req, res) => {
+  const { sender, receivers, chatId, mgsId, isGroupChat } = req.body;
+
+  if (!sender || !receivers || !chatId || !mgsId) return;
+  try {
+    console.log("call add noti");
+    const notification = await Notification.create({
+      sender,
+      receivers,
+      chat: chatId,
+      message: mgsId,
+      isGroupChat: isGroupChat,
+    });
+
+    res.status(201).json(notification);
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({
+      success: false,
+      message: err.message,
+    });
+  }
+});
+
+const fetchNotifications = asyncHandler(async (req, res) => {
+  try {
+    const notifications = await User.find(
+      {
+        _id: req.user._id,
+      },
+      {
+        notifications: 1,
+        _id: 0,
+      }
+    );
+
+    res.status(200).json(notifications[0]);
   } catch (err) {
     res.status(400).json({
       success: false,
@@ -118,12 +165,12 @@ const createGroupChat = asyncHandler(async (req, res) => {
       chatName: req.body.name,
       users: users,
       isGroupChat: true,
-      groupAdmin: req.user,
+      creator: req.user._id,
     });
 
     const fullGroupChat = await Chat.findOne({ _id: groupChat._id })
-      .populate("users", "-password")
-      .populate("groupAdmin", "-password");
+      .populate("users")
+      .populate("creator");
 
     res.status(200).json(fullGroupChat);
   } catch (err) {
@@ -197,9 +244,7 @@ const removeFromGroup = asyncHandler(async (req, res) => {
     {
       new: true,
     }
-  )
-    .populate("users", "-password")
-    .populate("groupAdmin", "-password");
+  );
 
   if (!updatedData) {
     res.status(404);
@@ -216,4 +261,6 @@ module.exports = {
   renameGroupChat,
   addToGroup,
   removeFromGroup,
+  fetchNotifications,
+  addNotification,
 };

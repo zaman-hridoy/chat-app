@@ -6,6 +6,10 @@ const chatSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    creator: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
     isGroupChat: {
       type: Boolean,
       default: false,
@@ -20,10 +24,12 @@ const chatSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Message",
     },
-    groupAdmin: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
+    notifications: [
+      {
+        type: String,
+        ref: "Message",
+      },
+    ],
   },
   {
     timestamps: true,

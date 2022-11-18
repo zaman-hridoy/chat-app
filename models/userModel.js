@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema(
   {
@@ -11,10 +10,6 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    password: {
-      type: String,
-      default: "1234",
-    },
     pic: {
       type: String,
       default: "",
@@ -24,23 +19,55 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    lastActive: {
+      type: Date,
+      default: Date.now,
+    },
+    role: {
+      type: String,
+      required: true,
+    },
+    notifications: [
+      {
+        sender: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+        chat: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Chat",
+        },
+        message: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Message",
+        },
+        isGroupChat: {
+          type: Boolean,
+          default: false,
+        },
+      },
+    ],
   },
   {
     timestamps: true,
   }
 );
 
-userSchema.methods.matchPassword = async function (pass) {
-  return await bcrypt.compare(pass, this.password);
-};
+// userSchema.methods.matchPassword = async function (pass) {
+//   return await bcrypt.compare(pass, this.password);
+// };
 
-userSchema.pre("save", async function (next) {
-  if (!this.isModified) {
-    next();
-  }
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-});
+// userSchema.pre("save", async function (next) {
+//   if (!this.isModified) {
+//     next();
+//   }
+//   const salt = await bcrypt.genSalt(10);
+//   this.password = await bcrypt.hash(this.password, salt);
+// });
 
 const User = mongoose.model("User", userSchema);
 

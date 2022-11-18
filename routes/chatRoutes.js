@@ -8,10 +8,14 @@ const {
   renameGroupChat,
   addToGroup,
   removeFromGroup,
+  fetchNotifications,
+  addNotification,
 } = require("../controllers/chatControllers");
 
 router.post("/", authMiddleware, accessChat);
 router.get("/", authMiddleware, fetchChats);
+router.post("/add-notification", authMiddleware, addNotification);
+router.get("/notifications", authMiddleware, fetchNotifications);
 
 // group chat
 router.post("/create-group", authMiddleware, createGroupChat);
